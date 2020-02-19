@@ -1,38 +1,40 @@
 import numpy as np
 import mirar
 
-x = np.ones([3, 1],dtype=float)
-print('x:', x)
+import skimage
 
+x = np.ones([3, 1],dtype=float)
 matrix = np.ones([5,3],dtype=float)
 A = mirar.denseMatrix(matrix)
-Ax = A.dot(x)
-print('Ax: ', Ax)
 ATAx = A.Tdot(Ax)
-print('ATAx: ', ATAx)
 
-
+x = np.ones([3, 1],dtype=float)
 scale = np.arange(3).astype(float)
 scale.shape = x.shape
-B = mirar.diagonalScale(scale)
-Bx = B.dot(x)
-print('Bx: ', Bx)
 BTBx = B.Tdot(Bx)
-print('BTBx: ', BTBx)
 
-
+x = np.ones([3, 1],dtype=float)
 operators = (A, B)
-AB = mirar.linearSeries(operators)
-ABx = AB.dot(x)
-print('ABx: ', ABx)
+AB = mirar.linearProduct(operators)
 BTATABx = AB.Tdot(ABx)
-print('BTATABx: ', BTATABx)
 
 
-FT = mirar.fourierTransform(axes=(0,1))
+x = np.zeros([11,1],dtype=float)
+x[3] = 1.0
+x[7] = 1.0
+FT = mirar.fourierTransform()
 IFT = FT.transpose()
+IFT.dot(FT.dot(x))
 
-print('FTx: ', FT.dot(x))
-print('IFTFTx: ', IFT.dot(FT.dot(x)))
+
+h = np.zeros([11,1],dtype=float)
+h[-1] = 1.5
+h[0] = 2.0
+h[1] = 1.5 
+H = np.sqrt(11)*FT.dot(h)
+D = mirar.fourierFilter(fourierScale=H)
+D.Tdot(D.dot(x))
+
+
 
 
