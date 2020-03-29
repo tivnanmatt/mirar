@@ -167,6 +167,21 @@ class lexicoVersion(mirarObjectiveFunction):
     def hessian(self,x):
         return linearProduct( (self.U.transpose(), self.originalObjective.hessian(self.U.dot(x)), self.U) )
 
+class linearModelMultivariateGaussian(mirarObjectiveFunction):
+    def __init__(self, y, A, invCovY):
+        self.y = y
+        self.A = A
+        self.invCovY = invCovY
+    def objective(self, x):
+        y_bar = self.A.dot(x)
+        obj = 0.5*(self.y - y_bar)*self.invCovY.dot( self.y - y_bar)
+        return np.sum(obj)
+    def gradient(self, x):
+        y_bar = self.A.dot(x)
+        return -1*self.invCovY.dot(self.y - y_bar)
+    def hessian(self, x):
+        return linearSum((self.A.transpose(), self.invCovY, self.A)) 
+
 class multivariateGaussian(mirarObjectiveFunction):
     def __init__(self,meanX, invCovX):
         self.meanX = meanX 
