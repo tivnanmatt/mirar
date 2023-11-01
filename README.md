@@ -1,2 +1,1 @@
-# mirar
-Medical Image Reconstruction And Restoration (MIRAR)
+# Medical Image Reconstruction And Restoration (MIRAR)
