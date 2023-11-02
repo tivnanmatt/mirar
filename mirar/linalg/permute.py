@@ -1,7 +1,7 @@
 
 import torch
 
-from .matrix_operator import RealMatrixOperator
+from .core import RealMatrixOperator
 
 class Pad(RealMatrixOperator):
     def __init__(self, input_shape, pad_width, mode='constant', value=0):

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .matrix_operator import MatrixOperator
+from .core import MatrixOperator
 
 from matplotlib import pyplot as plt
 

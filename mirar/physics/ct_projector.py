@@ -1,19 +1,13 @@
 import torch
-
-pi = 3.1415927410125732
-from ..linalg.matrix_operator import CompositeMatrixOperator, RealMatrixOperator
+from ..linalg.core import CompositeMatrixOperator
+from ..linalg.core import RealMatrixOperator
 from ..linalg.permute import Pad
 from ..linalg.fourier import FourierTransform
 from ..linalg.polar import PolarCoordinateResampler
 from ..linalg.sparse import RowSparseMatrixOperator
 from ..linalg.misc import RealPart
 
-# check if leaptorch is available
-try:
-    import leaptorch
-    leaptorch_available = True
-except ImportError:
-    leaptorch_available = False
+pi = 3.1415927410125732
 
 class CTProjector_FourierSliceTheorem(CompositeMatrixOperator, RealMatrixOperator):
     def __init__(self, input_shape, num_fourier_angular_samples, num_fourier_radial_samples, theta_values=None, radius_values=None, interpolator=None, pad_factor=1):
@@ -190,9 +184,23 @@ class CTProjector_ParallelBeam2D(RealMatrixOperator):
             u_A = torch.maximum(u3,u-self.du/2)
             u_B = torch.minimum(u4,u+self.du/2)
             area_between_pixel_trapezoidal_footprint[iPixel] += (u_B>u_A)*(h/(2*(u4-u3+ (u3==u4))))*((u_A-u4)**2.0 - (u_B-u4)**2.0)
-
         return pixel_index, area_between_pixel_trapezoidal_footprint 
     
     def to(self, device):
         self._device = device
         return self
+    
+
+
+
+class CTProjector_ExternalMatched(RealMatrixOperator):
+    def __init__(self, forward_projector_fun, back_projector_fun, input_shape, output_shape):
+        super(CTProjector_ExternalMatched, self).__init__(input_shape, output_shape)
+        self.forward_projector_fun = forward_projector_fun
+        self.back_projector_fun = back_projector_fun
+
+    def forward(self, x):
+        return self.forward_projector_fun(x) 
+       
+    def transpose(self, y):
+        return self.back_projector_fun(y)

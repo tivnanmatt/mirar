@@ -1,6 +1,6 @@
 
 import torch
-from . import matrix_operator
+from . import core
 from . import fourier
 from . import polar
 from . import sparse

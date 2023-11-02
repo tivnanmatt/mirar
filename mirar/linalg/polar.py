@@ -1,7 +1,7 @@
 
 import torch
 
-from .matrix_operator import RealMatrixOperator
+from .core import RealMatrixOperator
 from .interp import NearestNeighborInterpolator, BilinearInterpolator, LanczosInterpolator 
 
 

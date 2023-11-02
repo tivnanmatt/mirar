@@ -52,9 +52,16 @@ class MatrixOperator(torch.nn.Module):
                 The transpose of the linear operator.
         """
         
-        # by default, use a forward 
+        # by default, use a forward pass applied to zeros and then transpose
+        # this is not the most efficient way to do this, but it is the most general
 
-        # raise NotImplementedError
+        _input = torch.zeros(self.input_shape, dtype=torch.complex64, device=y.device)
+        _input.requires_grad = True
+        _output = self.forward(_input)
+        # now use autograd to compute the transpose applied to y
+        # we also need the transpose operation itself to be differentiable
+        _output.backward(y, create_graph=True)
+        return _input.grad
     
     def transpose_MatrixOperator(self):
         return TransposeMatrixOperator(self)
@@ -177,6 +184,22 @@ class MatrixOperator(torch.nn.Module):
             result =  self._pseudo_inverse_conjugate_gradient(y, **kwargs)
 
         return result
+    
+    def mat_add(self, M):
+        raise NotImplementedError
+    def mat_sub(self, M):
+        raise NotImplementedError
+    def mat_mul(self, M):
+        raise NotImplementedError
+    def __mul__(self, x):
+        return self.forward(x)
+    def __add__(self, M):
+        return self.mat_add(M)
+    def __sub__(self, M):
+        return self.mat_sub(M)
+    def __matmul__(self, M):
+        return self.mat_mul(M)
+
     
 class RealMatrixOperator(MatrixOperator):
     def __init__(self, input_shape, output_shape):
@@ -389,6 +412,19 @@ class ScalarMatrixOperator(SymmetricMatrixOperator):
             raise ValueError("The scalar is zero, so the inverse does not exist.")
         return ScalarMatrixOperator(self.input_shape, 1/self.scalar)
     
+    def mat_add(self, added_scalar_matrix):
+        assert isinstance(added_scalar_matrix, (ScalarMatrixOperator)), "ScalarMatrixOperator addition only supported for ScalarMatrixOperator." 
+        scalar = ScalarMatrixOperator(self.input_shape, self.scalar + added_scalar_matrix.scalar)
+    
+    def mat_sub(self, sub_scalar_matrix):
+        assert isinstance(sub_scalar_matrix, (ScalarMatrixOperator)), "ScalarMatrixOperator subtraction only supported for ScalarMatrixOperator." 
+        scalar = ScalarMatrixOperator(self.input_shape, self.scalar - sub_scalar_matrix.scalar)
+
+    def mat_mul(self, mul_scalar_matrix):
+        assert isinstance(mul_scalar_matrix, (ScalarMatrixOperator)), "ScalarMatrixOperator multiplication only supported for ScalarMatrixOperator." 
+        scalar = ScalarMatrixOperator(self.input_shape, self.scalar * mul_scalar_matrix.scalar)
+
+
 class DiagonalMatrixOperator(SquareMatrixOperator):
     def __init__(self, input_shape, diagonal_vector):
         """
@@ -427,6 +463,21 @@ class DiagonalMatrixOperator(SquareMatrixOperator):
         if torch.any(self.diagonal_vector == 0):
             raise ValueError("The diagonal vector contains zeros, so the inverse does not exist.")
         return DiagonalMatrixOperator(self.input_shape, 1/self.diagonal_vector)
+    
+    def mat_add(self, added_diagonal_matrix):
+        assert isinstance(added_diagonal_matrix, (DiagonalMatrixOperator)), "DiagonalMatrixOperator addition only supported for DiagonalMatrixOperator." 
+        assert self.input_shape == added_diagonal_matrix.input_shape, "DiagonalMatrixOperator addition only supported for DiagonalMatrixOperator with same input shape."
+        return DiagonalMatrixOperator(self.input_shape, self.diagonal_vector + added_diagonal_matrix.diagonal_vector)
+
+    def mat_sub(self, sub_diagonal_matrix):
+        assert isinstance(sub_diagonal_matrix, (DiagonalMatrixOperator)), "DiagonalMatrixOperator subtraction only supported for DiagonalMatrixOperator." 
+        assert self.input_shape == sub_diagonal_matrix.input_shape, "DiagonalMatrixOperator subtraction only supported for DiagonalMatrixOperator with same input shape."
+        return DiagonalMatrixOperator(self.input_shape, self.diagonal_vector - sub_diagonal_matrix.diagonal_vector)
+    
+    def mat_mul(self, mul_diagonal_matrix):
+        assert isinstance(mul_diagonal_matrix, (DiagonalMatrixOperator)), "DiagonalMatrixOperator multiplication only supported for DiagonalMatrixOperator." 
+        assert self.input_shape == mul_diagonal_matrix.input_shape, "DiagonalMatrixOperator multiplication only supported for DiagonalMatrixOperator with same input shape."
+        return DiagonalMatrixOperator(self.input_shape, self.diagonal_vector * mul_diagonal_matrix.diagonal_vector)
 
 
 class IdentityMatrixOperator(RealMatrixOperator, UnitaryMatrixOperator, HermitianMatrixOperator, SymmetricMatrixOperator):
@@ -456,13 +507,6 @@ class IdentityMatrixOperator(RealMatrixOperator, UnitaryMatrixOperator, Hermitia
         """
         return x
     
-
-
-
-
-
-
-
 
 
 
